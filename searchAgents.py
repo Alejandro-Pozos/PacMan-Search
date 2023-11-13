@@ -295,14 +295,23 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return (self.startingPosition, [])
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        node = state[0]
+        v_corners = state[1]
+
+        if node in self.corners:
+            if not node in v_corners:
+                v_corners.append(node)
+
+            return len(v_corners) == 4
+            # 4 corners in a square
+        return False
 
     def getSuccessors(self, state):
         """
@@ -314,7 +323,8 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
-
+        x, y = state[0]
+        v_corners = state[1]
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
@@ -322,9 +332,20 @@ class CornersProblem(search.SearchProblem):
             #   x,y = currentPosition
             #   dx, dy = Actions.directionToVector(action)
             #   nextx, nexty = int(x + dx), int(y + dy)
-            #   hitsWall = self.walls[nextx][nexty]
+            #   hits_wall = self.walls[nextx][nexty]
 
             "*** YOUR CODE HERE ***"
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            hits_wall = self.walls[nextx][nexty]
+            if not hits_wall:
+                succeeding_vd_corners = list(v_corners)
+                next_node = (nextx, nexty)
+                if next_node in self.corners:
+                    if next_node not in succeeding_vd_corners:
+                        succeeding_vd_corners.append(next_node)
+                successor = ((next_node, succeeding_vd_corners), action, 1)
+                successors.append(successor)
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
