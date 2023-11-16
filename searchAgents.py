@@ -81,24 +81,24 @@ class SearchAgent(Agent):
             raise AttributeError(fn + ' is not a search function in search.py.')
         func = getattr(search, fn)
         if 'heuristic' not in func.__code__.co_varnames:
-            print('[SearchAgent] using function ' + fn)
+            print(('[SearchAgent] using function ' + fn))
             self.searchFunction = func
         else:
-            if heuristic in globals().keys():
+            if heuristic in list(globals().keys()):
                 heur = globals()[heuristic]
             elif heuristic in dir(search):
                 heur = getattr(search, heuristic)
             else:
                 raise AttributeError(heuristic + ' is not a function in searchAgents.py or search.py.')
-            print('[SearchAgent] using function %s and heuristic %s' % (fn, heuristic))
+            print(('[SearchAgent] using function %s and heuristic %s' % (fn, heuristic)))
             # Note: this bit of Python trickery combines the search algorithm and the heuristic
             self.searchFunction = lambda x: func(x, heuristic=heur)
 
         # Get the search problem type from the name
-        if prob not in globals().keys() or not prob.endswith('Problem'):
+        if prob not in list(globals().keys()) or not prob.endswith('Problem'):
             raise AttributeError(prob + ' is not a search problem type in SearchAgents.py.')
         self.searchType = globals()[prob]
-        print('[SearchAgent] using problem type ' + prob)
+        print(('[SearchAgent] using problem type ' + prob))
 
     def registerInitialState(self, state):
         """
@@ -114,8 +114,8 @@ class SearchAgent(Agent):
         problem = self.searchType(state) # Makes a new search problem
         self.actions  = self.searchFunction(problem) # Find a path
         totalCost = problem.getCostOfActions(self.actions)
-        print('Path found with total cost of %d in %.1f seconds' % (totalCost, time.time() - starttime))
-        if '_expanded' in dir(problem): print('Search nodes expanded: %d' % problem._expanded)
+        print(('Path found with total cost of %d in %.1f seconds' % (totalCost, time.time() - starttime)))
+        if '_expanded' in dir(problem): print(('Search nodes expanded: %d' % problem._expanded))
 
     def getAction(self, state):
         """
@@ -295,23 +295,16 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        return (self.startingPosition, [])
+        visited = []
+        return (self.startingPosition, visited)
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
-        node = state[0]
-        v_corners = state[1]
-
-        if node in self.corners:
-            if not node in v_corners:
-                v_corners.append(node)
-
-            return len(v_corners) == 4
-            # 4 corners in a square
-        return False
+        # The goal state is reached when all four corners have been visited
+        return len(state[1]) == 4
 
     def getSuccessors(self, state):
         """
@@ -323,30 +316,22 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
-        x, y = state[0]
-        v_corners = state[1]
+        currentPosition, foundCorners = state[0], state[1]
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
             # Here's a code snippet for figuring out whether a new position hits a wall:
-            #   x,y = currentPosition
-            #   dx, dy = Actions.directionToVector(action)
-            #   nextx, nexty = int(x + dx), int(y + dy)
-            #   hits_wall = self.walls[nextx][nexty]
-
-            "*** YOUR CODE HERE ***"
+            x,y = currentPosition
             dx, dy = Actions.directionToVector(action)
             nextx, nexty = int(x + dx), int(y + dy)
-            hits_wall = self.walls[nextx][nexty]
-            if not hits_wall:
-                succeeding_vd_corners = list(v_corners)
-                next_node = (nextx, nexty)
-                if next_node in self.corners:
-                    if next_node not in succeeding_vd_corners:
-                        succeeding_vd_corners.append(next_node)
-                successor = ((next_node, succeeding_vd_corners), action, 1)
-                successors.append(successor)
-
+            hitsWall = self.walls[nextx][nexty]
+            "*** YOUR CODE HERE ***"
+            if not hitsWall:
+                if (nextx, nexty) in self.corners and (nextx, nexty) not in foundCorners:
+                    visited = foundCorners + [(nextx, nexty)]
+                    successors.append((((nextx, nexty), visited), action, 1))
+                else:
+                    successors.append((((nextx, nexty), foundCorners), action, 1))
         self._expanded += 1 # DO NOT CHANGE
         return successors
 
@@ -379,9 +364,24 @@ def cornersHeuristic(state, problem):
     """
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
-
     "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    unvisited = [] # Unvisited corners
+    visited = state[1] # Visited corners
+    node = state[0] # Current node
+    heuristic = 0 # Heuristic value
+    # Find and append all the corners that haven't been visited yet
+    for corner in corners:
+        if not corner in visited:
+            unvisited.append(corner)
+    # Find the sum of the shortest distances between the unvisited corners
+    # using manhattanDistance, which never returns a negative
+    while unvisited:
+        distance, corner = min([(util.manhattanDistance(node, corner), corner) \
+                                for corner in unvisited])
+        heuristic += distance
+        node = corner
+        unvisited.remove(corner)
+    return heuristic
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -475,7 +475,12 @@ def foodHeuristic(state, problem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    food = foodGrid.asList()
+    try:
+        return max(tuple(map(lambda x: mazeDistance(position, x, problem.startingGameState), food)))
+    # End the search heuristic if no food exists on the grid
+    except Exception as e:
+        return 0
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -504,9 +509,8 @@ class ClosestDotSearchAgent(SearchAgent):
         food = gameState.getFood()
         walls = gameState.getWalls()
         problem = AnyFoodSearchProblem(gameState)
-
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return search.astar(problem)
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -540,9 +544,9 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         complete the problem definition.
         """
         x,y = state
-
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # The goal state is reached if Pacman is in the same position as a piece of food
+        return (x, y) in self.food.asList()
 
 def mazeDistance(point1, point2, gameState):
     """
