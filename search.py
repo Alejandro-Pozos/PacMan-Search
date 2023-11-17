@@ -149,70 +149,122 @@ def depthFirstSearch(problem):
 
     """
     "*** YOUR CODE HERE ***"
-    start_node = problem.getStartState()
-    if problem.isGoalState(start_node):
-        return []
 
+    # Start state
+    start_node = problem.getStartState()
+
+    # Check if the start state is already in the winning position
+    if problem.isGoalState(start_node):
+        return []  # Return an empty list if the start state is the goal state
+
+    # Initialize a frontier using a Stack (LIFO) to store nodes to be explored
     frontier = util.Stack()
-    frontier.push((start_node, []))
+    frontier.push((start_node, []))  # Push the start node along with an empty list of actions
     
+    # Initialize a list to keep track of visited nodes
     visited_nodes = []
 
     while not frontier.isEmpty():
+        # Get the current node and its associated actions from the frontier
         curr_node, actions = frontier.pop()
+
+        # If the current node has not been visited yet
         if curr_node not in visited_nodes:
+            # Mark the current node as visited
             visited_nodes.append(curr_node)
+
+            # Check if the current node is the goal state
             if problem.isGoalState(curr_node):
-                return actions
+                return actions  # Return the list of actions if the goal state is reached
+
+            # Explore the successors of the current node
             for next_node, action, cost in problem.getSuccessors(curr_node):
+                # Create a new set of actions by appending the current action
                 next_action = actions + [action]
-                frontier.push((next_node, next_action))
-   
+
+                # Add the next node along with its actions to the frontier for further exploration
+                frontier.push((next_node, next_action))   
 
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    start_node = problem.getStartState()
-    if problem.isGoalState(start_node):
-        return []
-
-    frontier = util.Queue()
-    frontier.push((start_node, []))
     
+    # Get the initial state from the problem
+    start_node = problem.getStartState()
+    
+    # Check if the start node is the goal state
+    if problem.isGoalState(start_node):
+        return []  # Return an empty list if the start state is the goal state
+
+    # Initialize a frontier as a Queue (FIFO) to store nodes to be explored
+    frontier = util.Queue()
+    frontier.push((start_node, []))  # Push the start node along with an empty list of actions
+
+    # Initialize a list to keep track of visited nodes
     visited_nodes = []
 
+    # Continue searching until the frontier is not empty
     while not frontier.isEmpty():
+        # Get the current node and its associated actions from the frontier
         curr_node, actions = frontier.pop()
+
+        # If the current node has not been visited yet
         if curr_node not in visited_nodes:
+            # Mark the current node as visited
             visited_nodes.append(curr_node)
+
+            # Check if the current node is the goal state
             if problem.isGoalState(curr_node):
-                return actions
+                return actions  # Return the list of actions if the goal state is reached
+
+            # Explore the successors of the current node
             for next_node, action, cost in problem.getSuccessors(curr_node):
+                # Create a new set of actions by appending the current action
                 next_action = actions + [action]
+
+                # Add the next node along with its actions to the frontier for further exploration
                 frontier.push((next_node, next_action))
+
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    start_node = problem.getStartState()
-    if problem.isGoalState(start_node):
-        return []
 
+    # Get the start state from the problem
+    start_node = problem.getStartState()
+
+    # Check if the start state is already the goal state
+    if problem.isGoalState(start_node):
+        return []  # Return an empty list if the start state is the goal state
+
+    # Initialize a list to keep track of visited nodes
     visited_nodes = []
 
+    # Initialize a priority queue to explore nodes based on least total cost
     priority_queue = util.PriorityQueue()
-    priority_queue.push((start_node, [], 0), 0)
+    priority_queue.push((start_node, [], 0), 0)  # Push the start node with zero cost initially
 
     while not priority_queue.isEmpty():
+        # Get the current node, its associated actions, and the previous cost from the priority queue
         current_node, actions, prev_cost = priority_queue.pop()
+
+        # If the current node has not been visited yet
         if current_node not in visited_nodes:
+            # Mark the current node as visited
             visited_nodes.append(current_node)
+
+            # Check if the current node is the goal state
             if problem.isGoalState(current_node):
-                return actions
-            
+                return actions  # Return the list of actions if the goal state is reached
+
+            # Explore the successors of the current node
             for next_node, action, cost in problem.getSuccessors(current_node):
+                # Create new actions by appending the current action
                 new_actions = actions + [action]
+                # Calculate the new total cost
                 new_priority = prev_cost + cost
+
+                # Add the next node, its actions, and the new total cost to the priority queue
                 priority_queue.push((next_node, new_actions, new_priority), new_priority)
 
     
@@ -226,26 +278,46 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    start_node = problem.getStartState()
-    if problem.isGoalState(start_node):
-        return []
 
+    # Get the start state from the problem
+    start_node = problem.getStartState()
+
+    # Check if the start state is already the goal state
+    if problem.isGoalState(start_node):
+        return []  # Return an empty list if the start state is the goal state
+
+    # Initialize a list to keep track of visited nodes
     visited_nodes = []
 
+    # Initialize a priority queue to explore nodes based on combined cost and heuristic
     priority_queue = util.PriorityQueue()
-    priority_queue.push((start_node, [], 0), 0)
+    priority_queue.push((start_node, [], 0), 0)  # Push the start node with zero cost initially
 
     while not priority_queue.isEmpty():
+        # Get the current node, its associated actions, and the previous cost from the priority queue
         current_node, actions, prev_cost = priority_queue.pop()
+
+        # If the current node has not been visited yet
         if current_node not in visited_nodes:
+            # Mark the current node as visited
             visited_nodes.append(current_node)
+
+            # Check if the current node is the goal state
             if problem.isGoalState(current_node):
-                return actions
+                return actions  # Return the list of actions if the goal state is reached
+
+            # Explore the successors of the current node
             for next_node, action, cost in problem.getSuccessors(current_node):
+                # Create new actions by appending the current action
                 new_actions = actions + [action]
+                # Calculate the new cost to reach the next node
                 new_cost_to_node = prev_cost + cost
+                # Calculate the heuristic cost from the next node to the goal
                 heuristic_cost = new_cost_to_node + heuristic(next_node, problem)
+
+                # Calculate the combined cost and heuristic and add it to the priority queue
                 priority_queue.push((next_node, new_actions, new_cost_to_node), heuristic_cost)
+
 
 
 
